@@ -1,5 +1,6 @@
 require 'sequel'
 require 'terminal-table'
+require 'time'
 
 
 def init_db
@@ -42,4 +43,16 @@ def format_response(data)
 	table = Terminal::Table.new :headings => headings, :rows => rows
 	table.style = {:all_separators => true}
 	table
+	logo = "
+	░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+	░░██░█░█░██░█░█░███░██░░█░███░██░███░░░░
+	░░█░░█░█░█░░█░█░█░█░███░█░█░░░█░░█░█░░░░
+	░░██░░█░░█░░███░███░█░███░█░░░██░███░░░░
+	░░█░░█░█░█░░█░█░█░█░█░░██░█░█░█░░██░░░░░
+	░░██░█░█░██░█░█░█░█░█░░██░███░██░█░█░░░░
+	░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+	"
+	new_line = '
+'
+	"#{logo}#{new_line}#{table}#{new_line}#{Time.now}#{new_line}"
 end
