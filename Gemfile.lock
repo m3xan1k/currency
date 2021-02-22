@@ -5,6 +5,12 @@ GEM
       racc (~> 1.4)
     racc (1.5.2)
     sequel (5.41.0)
+    sqlite3 (1.4.2)
+    sqlite3-ruby (1.3.3)
+      sqlite3 (>= 1.3.3)
+    terminal-table (3.0.0)
+      unicode-display_width (~> 1.1, >= 1.1.1)
+    unicode-display_width (1.7.0)
 
 PLATFORMS
   x86_64-linux
@@ -12,6 +18,8 @@ PLATFORMS
 DEPENDENCIES
   nokogiri
   sequel
+  sqlite3-ruby
+  terminal-table
 
 BUNDLED WITH
    2.2.11
