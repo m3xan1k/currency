@@ -58,7 +58,21 @@ end
 def fetch_todays_values(db)
   today = Date.today
   table = db[:currencies]
-  today_currencies = table.select(:code, :name, :value).join(:values, :id => :id).where(date: today)
+  today_currencies = table.join(:values, :currency_id => :id).where(date: today).all
+  diffs = calculate_daily_rate_diff(db)
+  if diffs.empty?
+    return today_currencies
+  end
+  today_currencies_with_diff = []
+  diffs.each do |diff|
+    today_currencies.each do |curr|
+      if curr[:id] == diff[:currency_id]
+        curr[:diff] = diff[:diff]
+        today_currencies_with_diff.push(curr)
+      end
+    end
+  end
+  today_currencies_with_diff
 end
 
 
@@ -89,6 +103,18 @@ def calculate_daily_rate_diff(db, code = '')
   table = db[:currencies]
   yesterday = Date.today - 1.day
   if code.empty?
+    values = table.select(:value, :currency_id).join(:values, :currency_id => :id).where(date: yesterday..Date.today).order(:date).all
+    curr_ids = table.all.map {|curr| curr[:id]}
+    diffs = []
+    curr_ids.each do |id|
+      curr_values = values.filter {|val| val[:currency_id] == id}.sort_by {|val| val[:date]}
+      if curr_values.size < 2
+        next
+      end
+      diff = (curr_values[1][:value] - curr_values[0][:value]) / (curr_values[0][:value] / 100)
+      diffs.push({currency_id: id, diff: "#{diff.round(2)} %"})
+    end
+    return diffs
   else
     values = table.select(:value).join(:values, :currency_id => :id).where(date: yesterday..Date.today, code: code).order(:date).all
     # substract yesterday's value from today's. count how many percents plus or minus from yesterday
@@ -98,12 +124,13 @@ def calculate_daily_rate_diff(db, code = '')
 end
 
 
-def format_response(data, fields=[:code, :name, :value])
+def format_response(data, fields=[:code, :name, :value, :diff])
   headings = fields
   rows = data.map do |row|
     if fields.include?(:date)
       row[:date] = row[:date].to_s
     end
+    puts row.inspect
     row = row.fetch_values(*fields)
   end
   table = Terminal::Table.new :headings => headings, :rows => rows

@@ -17,7 +17,7 @@ end
 
 get '/codes/:code' do
   code = params[:code].upcase
-  format_response(fetch_todays_value_by_code(db, code), fields = [:code, :name, :value, :diff])
+  format_response(fetch_todays_value_by_code(db, code))
 end
 
 
