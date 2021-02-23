@@ -1,6 +1,7 @@
 require 'sequel'
 require 'terminal-table'
 require 'time'
+require 'active_support/time'
 
 
 def init_db
@@ -22,7 +23,7 @@ def init_db
       primary_key :id
 
       column :value, Float
-      column :date, String
+      Date :date, default: Date.today, :index => true
 
       foreign_key :currency_id, :currencies
     end
@@ -55,7 +56,7 @@ end
 
 
 def fetch_todays_values(db)
-  today = Date.today.to_s
+  today = Date.today
   table = db[:currencies]
   today_currencies = table.select(:code, :name, :value).join(:values, :id => :id).where(date: today)
 end
@@ -70,19 +71,41 @@ def fetch_todays_value_by_code(db, code)
   table = db[:currencies]
   date=Date.today.to_s
   where = {date: date, code: code}
-  today_currencies = table.select(:code, :name, :value).join(:values, :id => :id).where(where)
+  today_currencies = table.select(:code, :name, :value).join(:values, :id => :id).where(where).all
+  diff = calculate_daily_rate_diff(db, code = code)
+  today_currencies.first[:diff] = diff
+  today_currencies
 end
 
 
 def fetch_values_by_date(db, date)
   table = db[:currencies]
-  filter_by_date = table.select(:code, :name, :value, :date).join(:values, :id => :id).where(date: date)
+  date = Date.parse(date)
+  table.select(:code, :name, :value, :date).join(:values, :id => :id).where(date: date)
+end
+
+
+def calculate_daily_rate_diff(db, code = '')
+  table = db[:currencies]
+  yesterday = Date.today - 1.day
+  if code.empty?
+  else
+    values = table.select(:value).join(:values, :currency_id => :id).where(date: yesterday..Date.today, code: code).order(:date).all
+    # substract yesterday's value from today's. count how many percents plus or minus from yesterday
+    diff = (values[1][:value] - values[0][:value]) / (values[0][:value] / 100)
+    "#{diff.round(2)} %"
+  end
 end
 
 
 def format_response(data, fields=[:code, :name, :value])
   headings = fields
-  rows = data.map { |row| row.fetch_values(*fields) }
+  rows = data.map do |row|
+    if fields.include?(:date)
+      row[:date] = row[:date].to_s
+    end
+    row = row.fetch_values(*fields)
+  end
   table = Terminal::Table.new :headings => headings, :rows => rows
   table.style = {:all_separators => true}
   table
