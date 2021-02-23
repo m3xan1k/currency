@@ -54,16 +54,35 @@ def save_to_db(db, data={})
 end
 
 
-def fetch_todays_course(db)
+def fetch_todays_values(db)
   today = Date.today.to_s
   table = db[:currencies]
-  today_currencies = table.select(:code, :name, :value, :date).join(:values, :id => :id).where(date: today)
+  today_currencies = table.select(:code, :name, :value).join(:values, :id => :id).where(date: today)
 end
 
 
-def format_response(data)
-  headings = [:code, :name, :value, :date]
-  rows = data.map { |row| row.fetch_values(:code, :name, :value, :date) }
+def fetch_codes_and_names(db)
+  db[:currencies].all
+end
+
+
+def fetch_todays_value_by_code(db, code)
+  table = db[:currencies]
+  date=Date.today.to_s
+  where = {date: date, code: code}
+  today_currencies = table.select(:code, :name, :value).join(:values, :id => :id).where(where)
+end
+
+
+def fetch_values_by_date(db, date)
+  table = db[:currencies]
+  filter_by_date = table.select(:code, :name, :value, :date).join(:values, :id => :id).where(date: date)
+end
+
+
+def format_response(data, fields=[:code, :name, :value])
+  headings = fields
+  rows = data.map { |row| row.fetch_values(*fields) }
   table = Terminal::Table.new :headings => headings, :rows => rows
   table.style = {:all_separators => true}
   table
