@@ -35,7 +35,7 @@ def normalize_and_prepare_for_save(parsed_data)
 		unless curr[:nominal].to_i == 1
 				curr[:value] = curr[:value].to_f / curr[:nominal].to_i
 		end
-		curr[:nominal] = 1
+		curr.delete(:nominal)
 		curr[:date] = Date.today.to_s
 	end
 	parsed_data
