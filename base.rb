@@ -2,10 +2,23 @@ require 'sequel'
 require 'terminal-table'
 require 'time'
 require 'active_support/time'
+require 'pry'
 
+LOGO = "
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+░░██░█░█░██░█░█░███░██░░█░███░██░███░░░░
+░░█░░█░█░█░░█░█░█░█░███░█░█░░░█░░█░█░░░░
+░░██░░█░░█░░███░███░█░███░█░░░██░███░░░░
+░░█░░█░█░█░░█░█░█░█░█░░██░█░█░█░░██░░░░░
+░░██░█░█░██░█░█░█░█░█░░██░███░██░█░█░░░░
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+".freeze
+
+NEW_LINE = '
+'.freeze
 
 def init_db
-  # create db and table if not exist and bulk insert data
+  # create db and tables if not exist
   db = Sequel.sqlite('test.db')
 
   unless db.table_exists?(:currencies)
@@ -14,7 +27,6 @@ def init_db
 
       column :code, String
       column :name, String
-
     end
   end
 
@@ -23,7 +35,7 @@ def init_db
       primary_key :id
 
       column :value, Float
-      Date :date, default: Date.today, :index => true
+      Date :date, default: Date.today, index: true
 
       foreign_key :currency_id, :currencies
     end
@@ -32,8 +44,7 @@ def init_db
   return db
 end
 
-
-def save_to_db(db, data={})
+def save_to_db(db, data: {})
   currencies_table = db[:currencies]
   values_table = db[:values]
 
@@ -42,7 +53,7 @@ def save_to_db(db, data={})
     currencies_table.multi_insert(data.map { |row| row.slice(:code, :name) })
   end
 
-  # Match values with currency ids and save to db
+  # Match values with currency ids and bulk save to db
   values = []
   currencies_table.all.each do |currency|
     value = data.filter { |row| row[:code] == currency[:code] }.first.slice(:value, :date)
@@ -51,18 +62,20 @@ def save_to_db(db, data={})
   end
   values_table.multi_insert(values)
 
-  currencies_table.select(:code, :name, :value, :date).join(:values, :id => :id)
+  currencies_table.select(:code, :name, :value, :date).join(:values, id: :id)
 end
 
-
 def fetch_todays_values(db)
+  # get all currencies with values, calcultate diffs
   today = Date.today
   table = db[:currencies]
-  today_currencies = table.join(:values, :currency_id => :id).where(date: today).all
+  today_currencies = table.join(:values, currency_id: :id).where(date: today).all
   diffs = calculate_daily_rate_diff(db)
-  if diffs.empty?
-    return today_currencies
-  end
+
+  # return dataset without diffs if diffs empty
+  return today_currencies if diffs.empty?
+
+  # match and bundle diffs with currencies by currency_id
   today_currencies_with_diff = []
   diffs.each do |diff|
     today_currencies.each do |curr|
@@ -75,80 +88,82 @@ def fetch_todays_values(db)
   today_currencies_with_diff
 end
 
-
 def fetch_codes_and_names(db)
   db[:currencies].all
 end
 
-
-def fetch_todays_value_by_code(db, code)
+def fetch_todays_value_by_code(db, code: nil)
+  # fetch by code from db, calculate diff
+  # returns array to have single interface for formatting output
   table = db[:currencies]
-  date=Date.today.to_s
-  where = {date: date, code: code}
-  today_currencies = table.select(:code, :name, :value).join(:values, :id => :id).where(where).all
-  diff = calculate_daily_rate_diff(db, code = code)
-  today_currencies.first[:diff] = diff
+  date = Date.today.to_s
+  where = { date: date, code: code }
+  today_currencies = table.select(:code, :name, :value).join(:values, id: :id).where(where).all
+  diff = calculate_daily_rate_diff(db, code: code)
+  today_currencies.first[:diff] = diff unless diff.nil?
   today_currencies
 end
 
-
-def fetch_values_by_date(db, date)
+def fetch_values_by_date(db, date: Date.today.to_s)
   table = db[:currencies]
   date = Date.parse(date)
-  table.select(:code, :name, :value, :date).join(:values, :id => :id).where(date: date)
+  table.select(:code, :name, :value, :date).join(:values, id: :id).where(date: date)
 end
 
-
-def calculate_daily_rate_diff(db, code = '')
+def calculate_daily_rate_diff(db, code: '')
+  # TODO: refactor
   table = db[:currencies]
   yesterday = Date.today - 1.day
+
+  # every currency diff calculation
   if code.empty?
-    values = table.select(:value, :currency_id).join(:values, :currency_id => :id).where(date: yesterday..Date.today).order(:date).all
-    curr_ids = table.all.map {|curr| curr[:id]}
+    values = table.select(:value, :currency_id).join(:values, currency_id: :id).where(date: yesterday..Date.today).order(:date).all
+    curr_ids = table.all.map { |curr| curr[:id] }
     diffs = []
+
     curr_ids.each do |id|
-      curr_values = values.filter {|val| val[:currency_id] == id}.sort_by {|val| val[:date]}
-      if curr_values.size < 2
-        next
-      end
+      curr_values = values.filter { |val| val[:currency_id] == id }.sort_by {|val| val[:date]}
+
+      # check if there's no yesterday's values
+      next if curr_values.size < 2
+
+      # substract yesterday's value from today's. count how many percents plus or minus from yesterday
       diff = (curr_values[1][:value] - curr_values[0][:value]) / (curr_values[0][:value] / 100)
-      diffs.push({currency_id: id, diff: "#{diff.round(2)} %"})
+      diffs.push({ currency_id: id, diff: "#{diff.round(2)} %" })
     end
+
     return diffs
+  # specific currecy diff calculation
   else
-    values = table.select(:value).join(:values, :currency_id => :id).where(date: yesterday..Date.today, code: code).order(:date).all
+    values = table.select(:value).join(:values, currency_id: :id).where(date: yesterday..Date.today, code: code).order(:date).all
+
+    # check if there's no yesterday's values
+    return nil if values.size < 2
+
     # substract yesterday's value from today's. count how many percents plus or minus from yesterday
     diff = (values[1][:value] - values[0][:value]) / (values[0][:value] / 100)
     "#{diff.round(2)} %"
   end
 end
 
-
-def format_response(data, fields=[:code, :name, :value, :diff])
-  headings = fields
+def format_response(data, fields: [])
+  # extract values corresponding to fields
   rows = data.map do |row|
-    if fields.include?(:date)
-      row[:date] = row[:date].to_s
+    row[:date] = row[:date].to_s if fields.include?(:date)
+
+    # if row data not unified with fields
+    begin
+      row.fetch_values(*fields)
+    rescue KeyError
+      fields = [:code, :name, :value]
+      row.fetch_values(*fields)
     end
-    puts row.inspect
-    row = row.fetch_values(*fields)
   end
-  table = Terminal::Table.new :headings => headings, :rows => rows
-  table.style = {:all_separators => true}
-  table
-  logo = "
-  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-  ░░██░█░█░██░█░█░███░██░░█░███░██░███░░░░
-  ░░█░░█░█░█░░█░█░█░█░███░█░█░░░█░░█░█░░░░
-  ░░██░░█░░█░░███░███░█░███░█░░░██░███░░░░
-  ░░█░░█░█░█░░█░█░█░█░█░░██░█░█░█░░██░░░░░
-  ░░██░█░█░██░█░█░█░█░█░░██░███░██░█░█░░░░
-  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-  "
-  new_line = '
-'
-  "#{logo}#{new_line}#{table}#{new_line}#{Time.now}#{new_line}"
+
+  # set headings and draw table
+  headings = fields
+  table = Terminal::Table.new headings: headings, rows: rows
+  table.style = { all_separators: true }
+
+  "#{LOGO}#{NEW_LINE}#{table}#{NEW_LINE}#{Time.now}#{NEW_LINE}"
 end
-
-
-
