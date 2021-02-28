@@ -28,9 +28,9 @@ end
 def normalize_and_prepare_for_save(parsed_data)
   # unify nominal, add date
   parsed_data.map do |curr|
-    unless curr[:nominal].to_i == 1
-      curr[:value] = curr[:value].to_f / curr[:nominal].to_i
-    end
+    # normalize value
+    curr[:value] = curr[:value].sub(',', '.').to_f
+    curr[:value] = curr[:value] / curr[:nominal].to_i unless curr[:nominal].to_i == 1
     curr.delete(:nominal)
     curr[:date] = Date.today.to_s
   end

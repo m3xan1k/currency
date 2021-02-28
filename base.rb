@@ -98,11 +98,13 @@ def fetch_todays_value_by_code(db, code: nil)
   table = db[:currencies]
   date = Date.today.to_s
   where = { date: date, code: code }
-  today_currencies = table.select(:code, :name, :value).join(:values, currency_id: :id).where(where).all
-  p today_currencies
+  today_currency = table
+                   .select(:code, :name, :value)
+                   .join(:values, currency_id: :id)
+                   .where(where).first
   diff = calculate_daily_rate_diff(db, code: code)
-  today_currencies.first[:diff] = diff unless diff.nil?
-  today_currencies
+  today_currency[:diff] = diff unless diff.nil?
+  [today_currency]
 end
 
 def fetch_values_by_date(db, date: Date.today.to_s)
@@ -122,7 +124,12 @@ def calculate_daily_rate_diff(db, code: '')
 
   # every currency diff calculation
   if code.empty?
-    values = table.select(:value, :currency_id).join(:values, currency_id: :id).where(date: yesterday..Date.today).order(:date).all
+    values = table
+             .select(:value, :currency_id)
+             .join(:values, currency_id: :id)
+             .where(date: yesterday..Date.today)
+             .order(:date).all
+
     curr_ids = table.all.map { |curr| curr[:id] }
     diffs = []
 
@@ -134,21 +141,25 @@ def calculate_daily_rate_diff(db, code: '')
 
       # substract yesterday's value from today's.
       # count how many percents plus or minus from yesterday
-      diff = calc_diff(curr_values)
+      diff = calc_diff.call(curr_values)
       diffs.push({ currency_id: id, diff: "#{diff.round(2)} %" })
     end
 
     return diffs
   # specific currecy diff calculation
   else
-    curr_values = table.select(:value).join(:values, currency_id: :id).where(date: yesterday..Date.today, code: code).order(:date).all
+    curr_values = table
+                  .select(:value)
+                  .join(:values, currency_id: :id)
+                  .where(date: yesterday..Date.today, code: code)
+                  .order(:date).first
 
     # check if there's no yesterday's values
     return nil if curr_values.size < 2
 
     # substract yesterday's value from today's.
     # count how many percents plus or minus from yesterday
-    diff = calc_diff(curr_values)
+    diff = calc_diff.call(curr_values)
     "#{diff.round(2)} %"
   end
 end
@@ -157,7 +168,7 @@ def format_response(data, fields: [])
   # extract values corresponding to fields
   rows = data.map do |row|
     row[:date] = row[:date].to_s if fields.include?(:date)
-    row[:value] = row[:value].to_s.sub(',', '.').to_f.round(2) if fields.include?(:value)
+    row[:value] = row[:value].to_f.round(2) if fields.include?(:value)
 
     # if row data not unified with fields
     begin
