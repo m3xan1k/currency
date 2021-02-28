@@ -10,8 +10,5 @@ def run
   parsed_data = parse_content(xml_string)
   normalized_data = normalize_and_prepare_for_save(parsed_data)
   db = init_db
-  db_data = save_to_db(db, data: normalized_data)
-  puts db_data.all
+  save_to_db(db, data: normalized_data)
 end
-
-run
