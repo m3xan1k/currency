@@ -45,7 +45,7 @@ def daily_update_db(data)
     sliced_codes_and_names = data.map { |row| row.slice(:code, :name) }
     Currency.insert_all(sliced_codes_and_names)
   end
-  # match values with currencies
+  # match values with currencies and bulk save
   currencies = Currency.all
   values_to_create = []
 
