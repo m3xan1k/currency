@@ -1,5 +1,6 @@
-require './saver.rb'
-require './base.rb'
+require './saver'
+require './base'
+require './db'
 
 def run
   stock_url = 'http://www.cbr.ru/scripts/XML_daily_eng.asp'
@@ -9,6 +10,7 @@ def run
 
   parsed_data = parse_content(xml_string)
   normalized_data = normalize_and_prepare_for_save(parsed_data)
-  db = init_db
-  save_to_db(db, data: normalized_data)
+  # db = init_db
+  # save_to_db(db, data: normalized_data)
+  daily_update_db(normalized_data)
 end

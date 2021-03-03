@@ -38,3 +38,27 @@ class Value < ApplicationRecord
   validates :value, :created_at, presence: true
   belongs_to :currency
 end
+
+def daily_update_db(data)
+  # insert currencies if table is empty
+  unless Currency.any?
+    sliced_codes_and_names = data.map { |row| row.slice(:code, :name) }
+    Currency.insert_all(sliced_codes_and_names)
+  end
+  # match values with currencies
+  currencies = Currency.all
+  values_to_create = []
+
+  data.each do |row|
+    matched_currency = currencies.filter { |curr| curr.id if curr.code == row[:code] }
+                                 .first
+    value_data = {
+      currency_id: matched_currency.id,
+      value: row[:value],
+      created_at: row[:date]
+    }
+    values_to_create.push(value_data)
+  end
+
+  Value.insert_all(values_to_create)
+end
