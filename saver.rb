@@ -18,7 +18,7 @@ def parse_content(xml_string)
       code: curr.at_css('CharCode').text,
       nominal: curr.at_css('Nominal').text,
       name: curr.at_css('Name').text,
-      value: curr.at_css('Value').text
+      rate: curr.at_css('Value').text
     }
     parsed_data.push(parsed_node)
   end
@@ -28,9 +28,9 @@ end
 def normalize_and_prepare_for_save(parsed_data)
   # unify nominal, add date
   parsed_data.map do |curr|
-    # normalize value
-    curr[:value] = curr[:value].sub(',', '.').to_f
-    curr[:value] = curr[:value] / curr[:nominal].to_i unless curr[:nominal].to_i == 1
+    # normalize rate
+    curr[:rate] = curr[:rate].sub(',', '.').to_f
+    curr[:rate] = curr[:rate] / curr[:nominal].to_i unless curr[:nominal].to_i == 1
     curr.delete(:nominal)
     curr[:date] = Date.today.to_s
   end
