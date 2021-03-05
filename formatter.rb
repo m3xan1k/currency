@@ -50,10 +50,10 @@ def format_response(data, fields: [])
 
     # if row data not unified with fields
     begin
-      row.fetch_rates(*fields)
+      row.fetch_values(*fields)
     rescue KeyError
       fields = %w[code name rate]
-      row.fetch_rates(*fields)
+      row.fetch_values(*fields)
     end
   end
 

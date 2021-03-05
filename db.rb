@@ -62,7 +62,7 @@ def daily_update_db(data)
     rates_to_create.push(rate_data)
   end
 
-  rate.insert_all(rates_to_create)
+  Rate.insert_all(rates_to_create)
 end
 
 def calculate_daily_rate_diff
@@ -71,7 +71,6 @@ def calculate_daily_rate_diff
     # filter currencies by code first is yesterday
     matched_currencies = currencies.filter { |curr| curr['code'] == code }
                                    .sort_by { |curr| curr['date'] }
-    binding.pry
     # check if today's and yesterday's rates exist, subtract and write diff
     if matched_currencies.size == 2
       diff = matched_currencies.last['rate'] - matched_currencies.first['rate']
