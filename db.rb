@@ -103,3 +103,8 @@ def fetch_todays_rates_with_diff
   end
   currencies_with_diff
 end
+
+def fetch_codes_and_names
+  currencies = Currency.select(:name, :code).all
+  currencies.map(&:attributes)
+end

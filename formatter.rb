@@ -44,6 +44,7 @@ NEW_LINE = '
 
 def format_response(data, fields: [])
   # extract rates corresponding to fields
+  # binding.pry
   rows = data.map do |row|
     row['date'] = row['date'].to_s if fields.include?('date')
     row['rate'] = row['rate'].to_f.round(2) if fields.include?('rate')

@@ -3,11 +3,11 @@ require './db'
 require 'sinatra'
 
 get '/' do
-  format_response(fetch_todays_rates_with_diff, fields: [:code, :name, :rate, :diff])
+  format_response(fetch_todays_rates_with_diff, fields: %w[code name rate diff])
 end
 
 get '/codes' do
-  # format_response(fetch_codes_and_names(db), fields: [:code, :name])
+  format_response(fetch_codes_and_names, fields: %w[code name])
 end
 
 get '/codes/:code' do
