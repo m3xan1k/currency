@@ -120,6 +120,5 @@ def fetch_todays_rate_by_code(code: nil)
                                   .all
   return nil if currency_for_two_days.empty?
 
-  # binding.pry
   calculate_daily_rate_diff.call(code, currency_for_two_days)
 end

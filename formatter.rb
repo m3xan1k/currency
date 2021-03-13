@@ -39,9 +39,6 @@ end
 # end
 
 def format_response(data, fields: [])
-  # check if only single currency requested
-  data = [data] if data.is_a?(Hash)
-
   # extract rates corresponding to fields
   # binding.pry
 

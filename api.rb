@@ -2,22 +2,45 @@ require './formatter'
 require './db'
 require 'sinatra'
 
-
 get '/' do
-  format_response(fetch_todays_rates_with_diff, fields: %w[code name rate diff])
+  @currencies = fetch_todays_rates_with_diff
+  if request.env['HTTP_USER_AGENT'].start_with?('curl')
+    format_response(@currencies, fields: %w[code name rate diff])
+  else
+    erb(:index, { layout: :base, currencies: @currencies })
+  end
 end
 
-get '/codes' do
-  format_response(fetch_codes_and_names, fields: %w[code name])
+get '/codes/?' do
+  @currencies = fetch_codes_and_names
+  if request.env['HTTP_USER_AGENT'].start_with?('curl')
+    format_response(@currencies, fields: %w[code name])
+  else
+    erb(:index, { layout: :base, currencies: @currencies })
+  end
 end
 
-get '/codes/:code' do
+get '/codes/:code/?' do
   code = params[:code].upcase
-  data = fetch_todays_rate_by_code(code: code)
-  data.nil? ? format_404 : format_response(data, fields: %w[code name rate diff])
+  @currencies = fetch_todays_rate_by_code(code: code)
+  if request.env['HTTP_USER_AGENT'].start_with?('curl')
+    @currencies.nil? ? format_404 : format_response([@currencies], fields: %w[code name rate diff])
+  else
+    if @currencies.nil?
+      erb(:not_found, { layout: :base })
+    else
+      @currencies = [@currencies]
+      erb(:index, { layout: :base, currencies: @currencies })
+    end
+  end
 end
 
-get '/dates/:date' do
+get '/dates/:date/?' do
   # date = params[:date]
   # format_response(fetch_rates_by_date(db, date: date), fields: [:code, :name, :rate, :date])
+end
+
+not_found do
+  status 404
+  erb(:not_found, { layout: :base })
 end
