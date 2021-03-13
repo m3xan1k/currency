@@ -108,3 +108,18 @@ def fetch_codes_and_names
   currencies = Currency.select(:name, :code).all
   currencies.map(&:attributes)
 end
+
+def fetch_todays_rate_by_code(code: nil)
+  return nil if code.nil?
+
+  today = Date.today
+  yesterday = today - 1.day
+  currency_for_two_days = Currency.select(:name, :code, :rate, 'created_at as date')
+                                  .joins(:rates)
+                                  .where(rates: { created_at: yesterday..today }, code: code)
+                                  .all
+  return nil if currency_for_two_days.empty?
+
+  # binding.pry
+  calculate_daily_rate_diff.call(code, currency_for_two_days)
+end

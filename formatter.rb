@@ -17,25 +17,21 @@ LOGO = "
 NEW_LINE = '
 '.freeze
 
-# def fetch_codes_and_names(db)
-#   db[:currencies].all
-# end
+NOT_FOUND = "
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+░░░░░░░█░░░█░░█████░░█░░░█░░░░░░░░░░░
+░░░░░░░█░░░█░░█░░░█░░█░░░█░░░░░░░░░░░
+░░░░░░░█░░░█░░█░░░█░░█░░░█░░░░░░░░░░░
+░░░░░░░█████░░█░░░█░░█████░░░░░░░░░░░
+░░░░░░░░░░░█░░█░░░█░░░░░░█░░░░░░░░░░░
+░░░░░░░░░░░█░░█░░░█░░░░░░█░░░░░░░░░░░
+░░░░░░░░░░░█░░█████░░░░░░█░░░░░░░░░░░
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+".freeze
 
-# def fetch_todays_rate_by_code(db, code: nil)
-#   # fetch by code from db, calculate diff
-#   # returns array to have single interface for formatting output
-#   table = db[:currencies]
-#   date = Date.today.to_s
-#   where = { date: date, code: code }
-#   today_currency = table
-#                    .select(:code, :name, :rate)
-#                    .join(:rates, currency_id: :id)
-#                    .where(where).first
-#   diff = calculate_daily_rate_diff(db, code: code)
-#   today_currency[:diff] = diff unless diff.nil?
-#   [today_currency]
-# end
-
+def format_404
+  "#{LOGO}#{NEW_LINE}#{NOT_FOUND}#{NEW_LINE}#{Time.now}#{NEW_LINE}"
+end
 # def fetch_rates_by_date(db, date: Date.today.to_s)
 #   table = db[:currencies]
 #   date = Date.parse(date)
@@ -43,8 +39,12 @@ NEW_LINE = '
 # end
 
 def format_response(data, fields: [])
+  # check if only single currency requested
+  data = [data] if data.is_a?(Hash)
+
   # extract rates corresponding to fields
   # binding.pry
+
   rows = data.map do |row|
     row['date'] = row['date'].to_s if fields.include?('date')
     row['rate'] = row['rate'].to_f.round(2) if fields.include?('rate')

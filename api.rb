@@ -2,6 +2,7 @@ require './formatter'
 require './db'
 require 'sinatra'
 
+
 get '/' do
   format_response(fetch_todays_rates_with_diff, fields: %w[code name rate diff])
 end
@@ -11,8 +12,9 @@ get '/codes' do
 end
 
 get '/codes/:code' do
-  # code = params[:code].upcase
-  # format_response(fetch_todays_rate_by_code(db, code: code), fields: [:code, :name, :rate, :diff])
+  code = params[:code].upcase
+  data = fetch_todays_rate_by_code(code: code)
+  data.nil? ? format_404 : format_response(data, fields: %w[code name rate diff])
 end
 
 get '/dates/:date' do
