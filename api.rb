@@ -23,8 +23,9 @@ end
 get '/codes/:code/?' do
   code = params[:code].upcase
   @currencies = fetch_todays_rate_by_code(code: code)
+  fields = %w[code name rate diff]
   if request.env['HTTP_USER_AGENT'].start_with?('curl')
-    @currencies.nil? ? format_404 : format_response([@currencies], fields: %w[code name rate diff])
+    @currencies.nil? ? format_404 : format_response([@currencies], fields: fields)
   else
     if @currencies.nil?
       erb(:not_found, { layout: :base })
@@ -38,11 +39,18 @@ end
 get '/dates/:date/?' do
   date = params[:date]
   @currencies = fetch_rates_by_date(date: date)
-  if @currencies.nil?
-    return erb(:not_found, { layout: :base })
-  end
+  fields = %w[code name rate date]
 
-  format_response(@currencies, fields: [:code, :name, :rate, :date])
+  if request.env['HTTP_USER_AGENT'].start_with?('curl')
+    @currencies.nil? ? format_404 : format_response(@currencies, fields: fields)
+  else
+    context = { layout: :base }
+    if @currencies.nil?
+      erb(:not_found, context)
+    else
+      erb(:index, context.merge({ currencies: @currencies }))
+    end
+  end
 end
 
 not_found do
