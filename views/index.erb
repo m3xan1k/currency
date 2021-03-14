@@ -8,10 +8,10 @@
           <div class="col col-md-1"> <%= currency['rate'].to_f.round(2).to_s %> </div>
         <% end %>
         <% unless currency['diff'].nil? %>
-          <div class="col"> <%= currency['diff'] %> </div>
+          <div class="col col-md-1"> <%= currency['diff'] %> </div>
         <% end %>
         <% unless currency['date'].nil? %>
-          <div class="col"> <%= currency['date'] %> </div>
+          <div class="col col-md-1"> <%= currency['date'] %> </div>
         <% end %>
       </div>
   <% end %>
