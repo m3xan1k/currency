@@ -1,8 +1,5 @@
-require 'sequel'
 require 'terminal-table'
 require 'time'
-require 'active_support/time'
-require 'pry'
 
 LOGO = "
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░

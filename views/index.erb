@@ -1,17 +1,17 @@
 
-<div class="container">
+<div class="container my-5">
   <% @currencies.each do |currency| %>
       <div class="row my-3 justify-content-md-center">
-        <div class="col col-md-1"> <%= currency['code'] %> </div>
-        <div class="col col-md-3"> <%= currency['name'] %> </div>
+        <div class="col col-md-1"> <%= currency['code'] %> <hr> </div>
+        <div class="col col-md-3"> <%= currency['name'] %> <hr> </div>
         <% unless currency['rate'].nil? %>
-          <div class="col col-md-1"> <%= currency['rate'].to_f.round(2).to_s %> </div>
+          <div class="col col-md-1"> <%= currency['rate'].to_f.round(2).to_s %> ₽ <hr> </div>
         <% end %>
         <% unless currency['diff'].nil? %>
-          <div class="col col-md-1"> <%= currency['diff'] %> </div>
+          <div class="col col-md-1"> <%= currency['diff'] %> % <hr> </div>
         <% end %>
         <% unless currency['date'].nil? %>
-          <div class="col col-md-1"> <%= currency['date'] %> </div>
+          <div class="col col-md-1"> <%= currency['date'] %> <hr> </div>
         <% end %>
       </div>
   <% end %>
