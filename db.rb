@@ -105,13 +105,16 @@ def fetch_todays_rates_with_diff
 end
 
 def fetch_codes_and_names
+  # returns all codes and names
   currencies = Currency.select(:name, :code).all
   currencies.map(&:attributes)
 end
 
 def fetch_todays_rate_by_code(code: nil)
+  # if code not present in url
   return nil if code.nil?
 
+  # fetch rates for today and yesterday to calculate diff, chech if nil
   today = Date.today
   yesterday = today - 1.day
   currency_for_two_days = Currency.select(:name, :code, :rate, 'created_at as date')
@@ -124,16 +127,20 @@ def fetch_todays_rate_by_code(code: nil)
 end
 
 def fetch_rates_by_date(date: nil)
+  # if date not present in url
   return nil if date.nil?
 
+  # if date in wrong format
   begin
     date = Date.parse(date)
   rescue Date::Error
     return nil
   end
 
+  # if date is from future
   return nil if date > Date.today
 
+  # query db for specific date then check if nil
   currencies = Currency.select(:name, :code, :rate, 'created_at as date')
                        .joins(:rates)
                        .where(rates: { created_at: date })
