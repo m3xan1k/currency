@@ -36,8 +36,13 @@ get '/codes/:code/?' do
 end
 
 get '/dates/:date/?' do
-  # date = params[:date]
-  # format_response(fetch_rates_by_date(db, date: date), fields: [:code, :name, :rate, :date])
+  date = params[:date]
+  @currencies = fetch_rates_by_date(date: date)
+  if @currencies.nil?
+    return erb(:not_found, { layout: :base })
+  end
+
+  format_response(@currencies, fields: [:code, :name, :rate, :date])
 end
 
 not_found do

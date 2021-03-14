@@ -32,11 +32,6 @@ NOT_FOUND = "
 def format_404
   "#{LOGO}#{NEW_LINE}#{NOT_FOUND}#{NEW_LINE}#{Time.now}#{NEW_LINE}"
 end
-# def fetch_rates_by_date(db, date: Date.today.to_s)
-#   table = db[:currencies]
-#   date = Date.parse(date)
-#   table.select(:code, :name, :rate, :date).join(:rates, currency_id: :id).where(date: date)
-# end
 
 def format_response(data, fields: [])
   # extract rates corresponding to fields
